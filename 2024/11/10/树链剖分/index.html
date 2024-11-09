@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>我的技术与生活——树链剖分 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="/imgs/shortcut-icon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/css/public.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/iconfont.css" />
+  <link rel="stylesheet" href="/css/APlayer.min.css" />
+  <script src="/js/APlayer.min.js"></script>
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/jquery.pjax.min.js"></script>
+
+  <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+  <script>
+    document.title = `我的技术与生活——树链剖分`
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<style>
+  .load {
+    width: 100%;
+    height: 100vh;
+    background-color: rgb(37, 35, 40);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 9999;
+  }
+  .load-circle {
+    width: 80px;
+    height: 80px;
+    border: 8px solid orange;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: rotate 1s linear infinite;
+    filter: drop-shadow(0 0 3px orange);
+  }
+  .load-circle-inner {
+    width: 40px;
+    height: 40px;
+    border: 8px solid orange;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: rotate-reverse .5s linear infinite;
+  }
+  .load-text {
+    margin-top: 20px;
+    font-size: 24px;
+    color: orange;
+    display: flex;
+  }
+  .load-text span {
+    margin: 0 5px;
+    text-shadow: 5px 5px 5px orange;
+    animation: move 1s linear infinite;
+  }
+  .load-text span:nth-child(1) {
+    animation-delay: -0.6s;
+  }
+  .load-text span:nth-child(2) {
+    animation-delay: -0.5s;
+  }
+  .load-text span:nth-child(3) {
+    animation-delay: -0.4s;
+  }
+  .load-text span:nth-child(4) {
+    animation-delay: -0.3s;
+  }
+  .load-text span:nth-child(5) {
+    animation-delay: -0.2s;
+  }
+  .load-text span:nth-child(6) {
+    animation-delay: -0.1s;
+  }
+  @keyframes rotate {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes rotate-reverse {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(-360deg); }
+  }
+  @keyframes move {
+    0% { transform: translateY(0%) rotate(0) scale(1); }
+    20% { transform: translateY(20%) rotate(10deg) scale(1.2); }
+    80% { transform: translateY(-10%) rotate(-20deg) scale(.8);}
+    100% { transform: translateY(0) rotate(0) scale(1); }
+  }
+
+  .progress {
+    position: fixed;
+    left: 0; top: 0;
+    width: 0;
+    height: 3px;
+    background-color: green;
+    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) .1s;
+    z-index: 9999;
+  }
+
+  .to-up {
+    animation: toUp .5s 1;
+  }
+  .gray {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 9999;
+    display: none;
+    pointer-events: none;
+    background-color: #000;
+    mix-blend-mode: color;
+  }
+  @keyframes toUp {
+    from { transform: translateY(15px); opacity: 0; }
+    to { transform: translateY(0) ; opacity: 1; }
+  }
+</style>
+<body>
+  <div id="load" class="load">
+    <div class="load-circle">
+      <div class="load-circle-inner"></div>
+    </div>
+    <p class="load-text">
+      <span>L</span>
+      <span>O</span>
+      <span>A</span>
+      <span>D</span>
+      <span>I</span>
+      <span>N</span>
+      <span>G</span>
+    </p>
+  </div>
+  <div id="container" class="container w-100 vh-100" style="display: none;">
+    <header class="header">
+  <div class="header-wrapper">
+    <div class="header-left">
+      <div class="header-search">
+        <input id="search-input" type="text" class="header-search--input" placeholder="请输入要检索的文章标题" />
+        <span id="search-btn" class="header-search--icon"><i class="iconfont icon-sousuo"></i></span>
+      </div>
+      <div id="search-layer" class="header-search--layer hidden">
+        <p class="title">
+          <span>以下是搜索内容：</span>
+          <span id="close-layer-btn">关闭</span>
+        </p>
+        <ul>
+        </ul>
+      </div>
+    </div>
+    <div class="header-right">
+      <ul class="header-menu">
+        <li>
+          <a href="http://example.com/">
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+            <span class="header-menu--span">首页</span>
+          </a>
+        </li>
+        <li>
+          <a href="http://example.com/log">
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+            <span class="header-menu--span">日志</span>
+          </a>
+        </li>
+        <li>
+          <a href="http://example.com/link">
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+            <span class="header-menu--span">友情链接</span>
+          </a>
+        </li>
+        <li>
+          <a href="http://example.com/about">
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+            <span class="header-menu--span">关于我</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<script>
+  const ipt = document.querySelector('#search-input')
+  const btn = document.querySelector('#search-btn')
+  const layer = document.querySelector('#search-layer')
+  const posts = JSON.parse(`[{"title":"24 - 11 - 7","path":"2024/11/07/24-11-7/"},{"title":"树链剖分","path":"2024/11/10/树链剖分/"}]`)
+  ipt.addEventListener('keyup', e => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  })
+  btn.addEventListener('click', () => {
+    handleSearch()
+  })
+
+  document.querySelector('#close-layer-btn').addEventListener('click', () => {
+    layer.classList.toggle('hidden')
+  })
+
+  function handleSearch() {
+    if (ipt.value.trim() === '') {
+      return
+    }
+    let html = ''
+    const targetPosts = posts.filter(post => post.title.includes(ipt.value))
+    targetPosts.forEach(post => {
+      html += `
+        <li>
+          <div>
+            <a href="/${post.path}">${post.title.replace(new RegExp(ipt.value), `<span>${ipt.value}</span>`)}</a>
+          </div>
+          <img src="${post.cover || '/imgs/default-cover.webp' }" />
+        </li>
+      `
+    })
+    if (html.trim () === '') {
+      html += '<p class="empty">没有搜索到内容</p>'
+    }
+    layer.querySelector('ul').innerHTML = html
+    layer.classList.remove('hidden')
+  }
+</script> 
+    <section id="main" class="main">
+      <div class="main-left-wrapper">
+<div class="main-left">
+  <div class="main-left--block">
+    <div class="main-left--info">
+      <img src="/imgs/avatar.jpg"" class="main-left--avatar" />
+      <div class="main-left--intro">
+        <p class="main-left--name">Cola.</p>
+        <div class="main-left--tags">
+          <span class="main-left--tag">中二</span>
+          <span class="main-left--tag">宅</span>
+        </div>
+      </div>
+    </div>
+  
+    <div>
+      <div class="main-left--motto">
+        <p>“花有重开日，人无再少年”</p>
+        <p>“一个简单普通的男孩”</p>
+      </div>
+      <div class="main-left--github">
+        <span class="line"></span>
+        <a target="_blank" rel="noopener" href="https://github.com/Aizener"><i class="logo iconfont icon-github-fill"></i></a>
+        <span class="line"></span>
+      </div>
+      <div class="main-left--statics">
+        <a href="/categories">
+          <div>
+            <span>0</span>
+            <span>分类</span>
+          </div>
+        </a>
+        <a href="/tags">
+          <div>
+            <span>0</span>
+            <span>标签</span>
+          </div>
+        </a>
+        <a href="/archives">
+          <div>
+            <span>1 </span>
+            <span>归档</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-left--block">
+    <ul class="main-left--menu">
+      
+        <li>
+          <a href="/">
+            <span class="header-menu--span">小站首页</span>
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/log">
+            <span class="header-menu--span">个人日志</span>
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/link">
+            <span class="header-menu--span">友情链接</span>
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/about">
+            <span class="header-menu--span">关于自己</span>
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/tools">
+            <span class="header-menu--span">我的工具</span>
+            <i class="header-menu--icon iconfont icon-gongju"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+  <div class="main-left--block">
+    <div class="main-left--site">
+      <h5 class="main-left--title">
+        <span>站点信息</span>
+        <i class="iconfont icon-zhandian"></i>
+      </h5>
+      <p class="main-left--subtitle">
+        <span>文章数目：</span>
+        <span>2 篇</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>最近动态：</span>
+        <span>今天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>上线时间：</span>
+        <span>998天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>当前版本：</span>
+        <span>v1.0.2</span>
+      </p>
+    </div>
+  </div>
+</div></div>
+      <div id="main-container" class="main-container">
+
+
+  <link rel="stylesheet" href="/css/partial/article.css" />
+
+<div class="article-container">
+  <div class="article">
+    <h1 class="article-title">树链剖分</h1>
+    <div class="article-info">
+      <div class="article-info--item">
+        <div class="article-info--info">
+          
+          <div class="article-info--categories">
+            <span>分类：</span>
+            
+          </div>
+          
+          
+          <div class="article-info--tags">
+            <span>标签：</span>
+            
+          </div>
+          
+          <p class="article-info--date">日期：2024-11-10 01:11:39</p>
+        </div>
+        <img src="/imgs/default-cover.webp" alt="" class="article-cover">
+      </div>
+    </div>
+    <article class="article-content markdown-body">
+      <p>树链剖分：</p>
+<p> 知识定义：</p>
+<p> 重儿子： 父节点的所有儿子中子树节点数目最多的节点</p>
+<p>轻儿子：父节点中除重儿子以外的儿子</p>
+<p>重边：父节点和重儿子连成的边</p>
+<p>轻边：父节点和轻儿子连城的边</p>
+<p>重链： 有多条重边连接而成的路径</p>
+<p><img src="file:///C:/Users/dell/Pictures/Screenshots/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202024-11-10%20012029.png"></p>
+<p>  结论：</p>
+<p> 1：整棵树会被剖分成若干条重链</p>
+<p> 2 ： 轻儿子一定是每条重链的顶点</p>
+<p> 3： 任意一条路径被切成不超过logn条链</p>
+<p>数组：</p>
+<p> fa[u] : 存u的父节点</p>
+<p> dep[u] : 存u的深度</p>
+<p> son[u] : 存u的重儿子</p>
+<p> sz[u] : 存以u为根的子树的节点数</p>
+<p> top[u] : 存u所在重链的顶点</p>
+<p>操作流程：<br>1：一遍dfs,弄出fa,dep,son数组</p>
+<p>2 ：两遍dfs,搞出top数组</p>
+<p>3 ：让两个游标沿着各自的重链向上跳，跳到同一条重链上时，深度小的那个游标所指向的点是LCA</p>
+<p>两次dfs的流程图：</p>
+<p>第一次：</p>
+<p><img src="file:///C:/Users/dell/Pictures/Typedown/ac01adf3-78a0-4ceb-826b-dc17ed539f01.png" alt="ac01adf3-78a0-4ceb-826b-dc17ed539f01"></p>
+<p>第二次：<br><img src="file:///C:/Users/dell/Pictures/Typedown/01f2c7b2-2526-4601-88cc-0cf69a8aa5aa.png" alt="01f2c7b2-2526-4601-88cc-0cf69a8aa5aa"></p>
+<p>代码实现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;int&gt; e[N];</span><br><span class="line">int fa[N],dep[N],son[N],siz[N];</span><br><span class="line">int top[N];</span><br><span class="line"></span><br><span class="line">void dfs1(int u,int father)&#123;</span><br><span class="line">    fa[u] = father;</span><br><span class="line">    dep[u] = dep[father] + 1;</span><br><span class="line">    siz[u] = 1;</span><br><span class="line"></span><br><span class="line">    for(auto v : e[u])&#123;</span><br><span class="line">        if(v == father) continue;</span><br><span class="line">        dfs1(v,u);</span><br><span class="line">        siz[u] += siz[v];</span><br><span class="line">        if(siz[son[u]] &lt; siz[v]) siz[u] = v;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void dfs2(int u,int t)&#123;</span><br><span class="line">    top[u] = t;</span><br><span class="line">    if(!son[u]) return ;</span><br><span class="line">    dfs2(son[u],t);</span><br><span class="line">    for(auto v : e[u])&#123;</span><br><span class="line">        if(v == fa[u] || v == son[u]) continue;        </span><br><span class="line">        dfs2(v,v);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int lca(int u,int v)&#123;</span><br><span class="line">    while(top[u] != top[v])&#123;</span><br><span class="line">        if(dep[top[u]] &lt; dep[top[v]]) swap(v,u);</span><br><span class="line">        u = fa[top[u]];</span><br><span class="line">    &#125;</span><br><span class="line">    return dep[u] &lt; dep[v] ? u : v;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面进行和线段树的联用（解决线段树只能用于二叉树的局限性）：</p>
+<p>题目链接：<a href="(https://www.luogu.com.cn/problem/P3384">【模板】重链剖分&#x2F;树链剖分</a></p>
+<p>代码实现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br></pre></td><td class="code"><pre><span class="line">// #define first x</span><br><span class="line">// #define second y</span><br><span class="line">#include &lt;bits/stdc++.h&gt;</span><br><span class="line">using namespace std;</span><br><span class="line"></span><br><span class="line">typedef long long ll;</span><br><span class="line">#define int ll</span><br><span class="line">typedef pair&lt;ll, ll&gt; pii;</span><br><span class="line">typedef pair&lt;double, int&gt; pdi;</span><br><span class="line">const int N = 2e6 + 10, mod = 998244353, inf = 0x3f3f3f3f;</span><br><span class="line"></span><br><span class="line">#define lc p &lt;&lt; 1</span><br><span class="line">#define rc p &lt;&lt; 1 | 1</span><br><span class="line">struct node&#123;</span><br><span class="line">    int l;</span><br><span class="line">    int r;</span><br><span class="line">    int add;</span><br><span class="line">    int sum;</span><br><span class="line">&#125;t[N];</span><br><span class="line">vector&lt;int&gt; g[N];</span><br><span class="line">int n,m,r,p;</span><br><span class="line">int w[N];</span><br><span class="line">int dist[N],siz[N],son[N],f[N];</span><br><span class="line">int top[N];</span><br><span class="line">int idx[N],sum;</span><br><span class="line">int ans[N];</span><br><span class="line">void dfs1(int x,int fa)&#123;</span><br><span class="line">    f[x] = fa;</span><br><span class="line">    dist[x] = dist[fa] + 1;</span><br><span class="line">    siz[x] = 1;</span><br><span class="line">    for(int i = 0;i &lt; g[x].size();i++)&#123;</span><br><span class="line">        int j = g[x][i];</span><br><span class="line">        if(j == fa) continue;</span><br><span class="line">        dfs1(j,x);</span><br><span class="line">        siz[x] += siz[j];</span><br><span class="line">        if(siz[son[x]] &lt; siz[j]) son[x] = j;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void dfs2(int a,int b)&#123;</span><br><span class="line">    top[a] = b;</span><br><span class="line">    idx[a] = ++sum;</span><br><span class="line">    ans[sum] = w[a];</span><br><span class="line">    if(!son[a]) return ;</span><br><span class="line">    dfs2(son[a],b);</span><br><span class="line"></span><br><span class="line">    for(int i = 0;i &lt; g[a].size();i++)&#123;</span><br><span class="line">        int j = g[a][i];</span><br><span class="line">        if(j == f[a]||j == son[a]) continue;</span><br><span class="line">        dfs2(j,j);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void pushup(int p)&#123;</span><br><span class="line">    t[p].sum = t[lc].sum + t[rc].sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void pushdown(int p)&#123;</span><br><span class="line">    if(t[p].add)&#123;</span><br><span class="line">        t[lc].sum += t[p].add*(t[lc].r - t[lc].l + 1);</span><br><span class="line">        t[rc].sum += t[p].add*(t[rc].r - t[rc].l + 1);</span><br><span class="line">        t[lc].add += t[p].add;</span><br><span class="line">        t[rc].add += t[p].add;</span><br><span class="line">        t[p].add = 0;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">void build(int p,int x,int y)&#123;</span><br><span class="line">    t[p] = &#123;x,y&#125;;</span><br><span class="line">    if(x == y)&#123;</span><br><span class="line">        t[p].sum = ans[x];</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    int mid = x + y &gt;&gt; 1;</span><br><span class="line">    build(lc,x,mid);</span><br><span class="line">    build(rc,mid + 1,y);</span><br><span class="line">    pushup(p);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void change(int p,int x,int y,int k)&#123;</span><br><span class="line">    if(t[p].l &gt;= x&amp;&amp;y &gt;= t[p].r)&#123;</span><br><span class="line">        t[p].sum += k*(t[p].r - t[p].l + 1);</span><br><span class="line">        t[p].add += k;</span><br><span class="line">        return ;</span><br><span class="line">    &#125;</span><br><span class="line">    pushdown(p);</span><br><span class="line">    int mid = t[p].l + t[p].r &gt;&gt; 1;</span><br><span class="line">    if(mid &gt;= x) change(lc,x,y,k);</span><br><span class="line">    if(mid &lt; y) change(rc,x,y,k);</span><br><span class="line">    pushup(p);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int query(int p,int x,int y)&#123;</span><br><span class="line">    if (t[p].l &gt;= x &amp;&amp; y &gt;= t[p].r)</span><br><span class="line">    &#123;</span><br><span class="line">        return t[p].sum;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int mid = t[p].l + t[p].r &gt;&gt; 1;</span><br><span class="line"></span><br><span class="line">    ll sum = 0;</span><br><span class="line">    pushdown(p);</span><br><span class="line">    if(mid &gt;= x) sum += query(lc,x,y);</span><br><span class="line">    if(mid &lt; y) sum += query(rc,x,y);</span><br><span class="line">    return sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void change_sort(int a, int b,int k)</span><br><span class="line">&#123;</span><br><span class="line">    while(top[a] != top[b])&#123;</span><br><span class="line">        if(dist[top[a]] &lt; dist[top[b]]) swap(a,b);</span><br><span class="line">        change(1,idx[top[a]],idx[a],k);</span><br><span class="line">        a = f[top[a]];</span><br><span class="line">    &#125;</span><br><span class="line">    if(dist[a] &lt; dist[b]) swap(a,b);</span><br><span class="line">    change(1,idx[b],idx[a],k);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int query1(int x,int y)&#123;</span><br><span class="line">    ll sum = 0;</span><br><span class="line">    while(top[x] != top[y])&#123;</span><br><span class="line">        if(dist[top[x]] &lt; dist[top[y]]) swap(x,y);</span><br><span class="line">        sum = (sum + query(1,idx[top[x]],idx[x])%p)%p;</span><br><span class="line">        x = f[top[x]];</span><br><span class="line">    &#125;</span><br><span class="line">    if(dist[x] &lt; dist[y]) swap(x,y);</span><br><span class="line">    sum = (sum + (query(1,idx[y],idx[x]))%p)%p;</span><br><span class="line">    return sum;</span><br><span class="line">&#125;</span><br><span class="line">void work()&#123;</span><br><span class="line">    cin &gt;&gt; n &gt;&gt; m &gt;&gt; r &gt;&gt; p;</span><br><span class="line">    for(int i = 1;i &lt;= n;i++) cin &gt;&gt; w[i];</span><br><span class="line"></span><br><span class="line">    for(int i = 1;i &lt;= n - 1;i++)&#123;</span><br><span class="line">        int a,b;</span><br><span class="line">        cin &gt;&gt; a &gt;&gt; b;</span><br><span class="line">        g[a].push_back(b);</span><br><span class="line">        g[b].push_back(a);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dfs1(r,0);</span><br><span class="line">    dfs2(r,r);</span><br><span class="line">    build(1,1,n);</span><br><span class="line">    for(int i = 1;i &lt;= m;i++)&#123;</span><br><span class="line">        int op;</span><br><span class="line">        cin &gt;&gt; op;</span><br><span class="line">        int x, y, z;</span><br><span class="line">        if(op == 1)&#123;</span><br><span class="line">            cin &gt;&gt; x &gt;&gt; y &gt;&gt; z;</span><br><span class="line">            change_sort(x,y,z);</span><br><span class="line">        &#125;</span><br><span class="line">        else if(op == 2)&#123;</span><br><span class="line">            cin &gt;&gt; x &gt;&gt; y;</span><br><span class="line">            cout &lt;&lt; query1(x,y) &lt;&lt; &quot;\n&quot;;</span><br><span class="line">        &#125;</span><br><span class="line">        else if(op == 3)&#123;</span><br><span class="line">            cin &gt;&gt; x &gt;&gt; z;</span><br><span class="line">            change(1,idx[x],idx[x] + siz[x] - 1,z);</span><br><span class="line">        &#125;</span><br><span class="line">        else if(op == 4)&#123;</span><br><span class="line">            cin &gt;&gt; x;</span><br><span class="line">            cout &lt;&lt; query(1,idx[x],idx[x] + siz[x] - 1)%p &lt;&lt; &quot;\n&quot;;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">signed main()</span><br><span class="line">&#123;</span><br><span class="line">    ios::sync_with_stdio(0);</span><br><span class="line">    cin.tie(0);</span><br><span class="line"></span><br><span class="line">    int _;</span><br><span class="line">    _ = 1;</span><br><span class="line">    while (_--)</span><br><span class="line">    &#123;</span><br><span class="line">        work();</span><br><span class="line">    &#125;</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+    </article>
+    
+    <div class="read-nums">
+      <!-- id 将作为查询条件 -->
+      <span id="2024/11/10/树链剖分/" class="leancloud_visitors" data-flag-title="Your Article Title">
+        <em class="post-meta-item-text">浏览量</em>
+        <i class="leancloud-visitors-count"></i>
+      </span>
+    </div>
+    <div class="comments-intro">
+      <h2>评论区</h2>
+      <p>欢迎你留下宝贵的意见，昵称输入QQ号会显示QQ头像哦~</p>
+    </div>
+    <div id="vcomments" class="vcomments"></div>
+    
+  </div>
+  <div class="article-catelogue">
+    <div class="article-catelogue--wrapper">
+      <div class="catelogue catelogue-1">
+        <h3>目录</h3>
+        
+      </div>
+      
+        <div class="catelogue catelogue-2">
+           
+          
+            <p>
+              <span>下一篇</span>
+              <a href="/2024/11/07/24-11-7/">24 - 11 - 7</a>
+            </p>
+          
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // var定义，避免pjax重新进来造成的重复声明错误
+  var config = JSON.parse('{"enable":true,"appId":"Pf8zCXGEH1qsprnWfikVVujL-gzGzoHsz","appKey":"qOqoiUHhH1TGtLRUYURkLRQX","placeholder":"请留下你宝贵的意见吧~","meta":["nick"],"recordIP":true,"visitor":true,"enableQQ":true}')
+  new Valine({
+    el: '#vcomments',
+    appId: config.appId,
+    appKey: config.appKey,
+    placeholder: config.placeholder,
+    meta: config.meta,
+    recordIP: config.recordIP,
+    visitor: config.visitor,
+    enableQQ: config.enableQQ,
+    path: '2024/11/10/树链剖分/'
+  })
+</script>
+
+
+<script>
+  $(document).on('pjax:complete', function() {
+    const tocs = document.querySelector('.toc')
+    const links = tocs ? tocs.querySelectorAll('a') : []
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        const href = decodeURIComponent(e.href)
+        href.search(/#(.*)/)
+        const id = RegExp.$1
+        const target = document.querySelector('#' + id)
+        const top = target.offsetTop
+        document.documentElement.scrollTo({
+          top: top - 100,
+          behavior: 'smooth'
+        })
+        e.preventDefault()
+      })
+    })
+  })
+</script> 
+
+</div>
+      <div class="main-right-wrapper"><div class="main-right">
+  <div class="main-right--board">
+    <div class="main-right--title">
+      <h5>公告栏</h5>
+      <i class="iconfont icon-gonggao"></i>
+    </div>
+    <div class="main-right--content">
+      Hello~大噶好。唔系可乐爱宅着，欢迎你们来到我的博客小站，希望能在这里收获到有用的东西哦！ 
+    </div>
+  </div>
+
+  <div id="aplayer" class="main-right--music"></div>
+
+  <div class="operate-items">
+    <div class="operate-item backtop">
+      <i class="iconfont icon-huidaodingbu"></i>
+      <span>回到顶部</span>
+    </div>
+    
+    <div class="operate-item turn-comment hidden">
+      <i class="iconfont icon-pinglun"></i>
+      <span>查看评论</span>
+    </div>
+    
+  </div>
+
+  <div class="main-right--site">
+    <div class="main-right--power">
+      <p>Power By <a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/">Hexo</a>.</p>
+      <p>Theme：<a target="_blank" rel="noopener" href="https://github.com/Aizener/hexo-theme-cola">Cola.</a></p>
+    </div>
+    <p class="main-right--refer"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">蜀ICP备2022005384号-1</a> </p>
+  </div>
+</div>
+
+<script>
+  function setOperateItem () {
+    const reg = /\d{4}\/\d{2}\/\d{2}\/.+/
+    const path = location.pathname
+    const operateDom = document.querySelector('.main-right .operate-items')
+    const commentDom = document.querySelector('.turn-comment')
+    const cateloguDom = document.querySelector('.article-catelogue > .article-catelogue--wrapper');
+
+    if (commentDom) {
+      if (reg.test(path) || path.match(/\/log\/.+/)) {
+        commentDom.classList.remove('hidden')
+        const newDom = operateDom.cloneNode(true);
+        const _backtopDom = newDom.querySelector('.backtop');
+        const _commentDom = newDom.querySelector('.turn-comment');
+        _backtopDom.addEventListener('click', () => backTopEvent());
+        _commentDom.addEventListener('click', () => commentDomEvent());
+        cateloguDom.appendChild(newDom);
+      } else {
+        commentDom.classList.add('hidden')
+      }
+    }
+  }
+
+  setOperateItem()
+  const musics = JSON.parse(`[{"name":"安河桥","artist":"宋冬野","url":"http://ting6.yymp3.net:82/new25/songdongye/11.mp3","cover":"https://img2.baidu.com/it/u=1260056724,1076343118&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"},{"name":"卡布达","artist":"暂无","url":"music/kabuda.mp3","cover":"https://img2.baidu.com/it/u=705831265,2862720033&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"}]`)
+  const ap = new APlayer({
+    container: document.querySelector('#aplayer'),
+    audio: musics,
+  })
+
+  $(document).on('pjax:complete', function() {
+    setOperateItem()
+  })
+
+  document.querySelector('.backtop').addEventListener('click', () => {
+    backTopEvent();
+  })
+  const dom = document.querySelector('.turn-comment')
+  dom && dom.addEventListener('click', () => {
+    commentDomEvent();
+  })
+
+  function backTopEvent() {
+    document.documentElement.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+
+  function commentDomEvent() {
+    const commentDom = document.querySelector('.comments-intro')
+    if (!commentDom) return
+    const top = commentDom.offsetTop, height = commentDom.offsetHeight
+    document.documentElement.scrollTo({
+      top: top - 2 * height,
+      behavior: 'smooth'
+    })
+  }
+</script></div>
+    </section>
+  </div>
+  <div id="progress" class="progress"></div>
+  <div id="gray" class="gray"></div>
+
+  <script>
+    function initScroll () {
+      document.addEventListener('scroll', () => {
+        const doc = document.documentElement
+        const scrollTop = doc.scrollTop
+        const pageHeight = doc.offsetHeight
+        const clientHeight = doc.clientHeight
+        const ratio = scrollTop / (pageHeight - clientHeight)
+        const progress = document.querySelector('#progress')
+        const avatarImg = document.querySelector('.main-left--avatar')
+        progress.style.width = (100 * ratio) + '%'
+        avatarImg.style.transform = `rotate(${360 * ratio}deg)`
+      })
+    }
+
+    const rootPath = "/"
+
+    const checkAndSetArticlePageLayout = () => {
+      const path = location.pathname.replace(rootPath, '');
+      if (
+        /^\/?\d{4}\/\d{2}\/\d{2}\/.*/.test(path) ||
+        /^log\/.+/.test(path)
+      ) {
+        $('.main-container, .main-right, .main-right-wrapper').addClass('is-article')
+      } else {
+        $('.main-container, .main-right, .main-right-wrapper').removeClass('is-article')
+      }
+    }
+
+    const gray = "none"
+    const setGrayStyle = () => {
+      if (gray === 'none') {
+        return
+      } else if (gray === 'index') {
+        location.pathname === '/' ? $('#gray').show() : $('#gray').hide()
+      } else if (gray === 'all') {
+        $('#gray').show()
+      }
+    }
+    setGrayStyle()
+
+
+    window.onload = function () {
+      checkAndSetArticlePageLayout()
+      setTimeout(() => {
+        $('#load').slideUp()
+        $('#container').slideToggle()
+        setTimeout(() => {
+          initScroll();
+        }, 500)
+      }, 500)
+    }
+    
+    let status = 0
+    // 对所有链接跳转事件绑定pjax容器container
+    $(document).pjax('a[target!=_blank]', '#main-container', {
+      container: '#main-container',
+      fragment: '#main-container',
+      timeout: 8000
+    })
+
+    $(document).on('pjax:start', function() {
+    })
+    $(document).on('pjax:complete', function() {
+      status = 0
+      $('.main-container').addClass('to-up').on('animationend', function() {
+        $(this).removeClass('to-up')
+      })
+      setGrayStyle()
+      checkAndSetArticlePageLayout()
+    })
+    $(document).on('pjax:popstate', function() {
+      status = -1
+      checkAndSetArticlePageLayout()
+    });
+  </script>
+</body>
+</html>
